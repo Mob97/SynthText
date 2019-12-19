@@ -41,7 +41,7 @@ def get_mask(ucm,viz=False):
         sx,sy = np.where(mask==0)
         seed = get_seed(sx,sy,ucm)
         i += 1
-    print "  > terminated in %d steps"%i
+    print("  > terminated in %d steps"%i)
 
     if viz:
         plt.imshow(mask)
@@ -81,7 +81,7 @@ def process_db_parallel(base_dir, th=0.11):
             return "".join(map(chr, self.ucm_h5[self.ucm_h5['names'][0,self.i]][:]))
 
         def __stop__(self):
-            print "DONE"
+            print("DONE")
             self.ucm_h5.close()
             raise StopIteration
 
@@ -101,14 +101,14 @@ def process_db_parallel(base_dir, th=0.11):
 
         def next(self):
             imname = self.get_valid_name()
-            print "%d of %d"%(self.i+1,self.N)
+            print("%d of %d"%(self.i+1,self.N))
             ucm = self.ucm_h5[self.ucm_h5['ucms'][0,self.i]][:]
             ucm = ucm.copy()
             self.i += 1
             return ((ucm>self.th).astype('uint8'),imname)
 
     ucm_iter = ucm_iterable(db_path,th)
-    print "cpu count: ", mp.cpu_count()
+    print("cpu count: ", mp.cpu_count())
     parpool = mp.Pool(4)
     ucm_result = parpool.imap_unordered(get_mask_parallel, ucm_iter, chunksize=1)
 
@@ -123,9 +123,9 @@ def process_db_parallel(base_dir, th=0.11):
         mask_dset.attrs['label'] = label
 
     # close the h5 files:
-    print "closing DB"
+    print("closing DB")
     dbo.close()
-    print ">>>> DONE"
+    print(">>>> DONE")
 
 
 base_dir = '/home/' # directory containing the ucm.mat, i.e., output of run_ucm.m
