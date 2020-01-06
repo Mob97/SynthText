@@ -5,9 +5,9 @@
 % Author: Ankush Gupta
 
 % path to the directory containing images, which need to be segmented
-img_dir = 'dir/containing/images';
+img_dir = '../new_images';
 % path to the mcg/pre-trained directory.
-mcg_dir = '/path/to/mcg/pre-trained';
+mcg_dir = './mcg/pre-trained';
 
 imsize = [240,NaN];
 % "install" the MCG toolbox:

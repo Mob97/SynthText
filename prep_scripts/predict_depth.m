@@ -7,9 +7,9 @@
 
 function predict_depth()
     % setup vlfeat
-    run( '../libs/vlfeat-0.9.18/toolbox/vl_setup');
+    run( './libs/vlfeat-0.9.18/toolbox/vl_setup');
     % setup matconvnet
-    dir_matConvNet='../libs/matconvnet/matlab/';
+    dir_matConvNet='./libs/matconvnet/matlab/';
     addpath(genpath(dir_matConvNet));
     run([dir_matConvNet 'vl_setupnn.m']);
 
@@ -17,9 +17,9 @@ function predict_depth()
     opts.useGpu=true;
     opts.inpaint = true;
     opts.normalize_depth = false; % limit depth to [0,1]
-    opts.imdir = '/path/to/image/dir';
+    opts.imdir = '../new_images';
 
-    opts.out_h5 = '/path/to/save/output/depth.h5';
+    opts.out_h5 = '../depth.h5';
 
     % these should point to the pre-trained models from:
     %  https://bitbucket.org/fayao/dcnf-fcsp/
@@ -36,11 +36,11 @@ function predict_depth()
         fprintf(' ** No GPU found. Using CPU...\n');
         opts.useGpu=false;
     end
-
-    imnames = dir(fullfile(opts.imdir),'*');
+    
+    imnames = dir(fullfile(opts.imdir,'*'));
     imnames = {imnames.name};
     N = numel(imnames);
-    for i = 1:N
+    for i = 3:N
         fprintf('%d of %d\n',i,N);
         imname = imnames{i};
         imtype = 'outdoor';
@@ -53,6 +53,7 @@ function predict_depth()
             opts.max_edge=640;
         end
         depth = get_depth(img,model.(imtype),opts);
+        size(depth)
         save_depth(imname,depth,opts);
     end
 end
@@ -70,7 +71,7 @@ function depth = get_depth(im_rgb,model,opts)
         [~,max_dim] = max(sz(1:2));
         osz = NaN*ones(1,2);
         osz(max_dim) = opts.max_edge;
-        im_rgb = imresize(im_rgb, osz);
+        im_rgb = imresize(im_rgb, osz);        
     end
 
     % do super-pixels:
@@ -101,4 +102,7 @@ function depth = get_depth(im_rgb,model,opts)
         depth(depth<0) = 0;
         depth(depth>1) = 1;
     end
+    %CAST 'DEPTH' INTO 3 CHANNEL (MINHBQ)
+    depth = cat(3, depth, depth);
+%     depth = permute(depth, [3, 2, 1]);
 end

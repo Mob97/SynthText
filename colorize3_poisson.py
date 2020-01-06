@@ -42,9 +42,10 @@ class Layer(object):
             print (color.shape)
             raise Exception("color datatype not understood")
 
-class FontColor(object):
 
+class FontColor(object):
     def __init__(self, col_file):
+        self.gray_diff_threshold = 100  # add threshold
         with open(col_file,'rb') as f:
             #self.colorsRGB = cp.load(f)
             u = pickle._Unpickler(f)
@@ -58,6 +59,10 @@ class FontColor(object):
         self.colorsLAB = np.r_[self.colorsRGB[:,0:3], self.colorsRGB[:,6:9]].astype('uint8')
         self.colorsLAB = np.squeeze(cv.cvtColor(self.colorsLAB[None,:,:],cv.COLOR_RGB2Lab))
 
+	def rgb_color_diff_in_gray(self, col1, col2):
+		gray1 = col1[0]*0.299 + col1[1]*0.587 + col1[2]*0.114
+		gray2 = col2[0]*0.299 + col2[1]*0.587 + col2[2]*0.114
+		return abs(gray1 - gray2)
 
     def sample_normal(self, col_mean, col_std):
         """
@@ -81,7 +86,7 @@ class FontColor(object):
 
         norms = np.linalg.norm(self.colorsLAB-bg_mean[None,:], axis=1)
         # choose a random color amongst the top 3 closest matches:
-        #nn = np.random.choice(np.argsort(norms)[:3]) 
+        #nn = np.random.choice(np.argsort(norms)[:3])
         nn = np.argmin(norms)
 
         ## nearest neighbour color:
@@ -90,10 +95,26 @@ class FontColor(object):
         col1 = self.sample_normal(data_col[:3],data_col[3:6])
         col2 = self.sample_normal(data_col[6:9],data_col[9:12])
 
+        ## fix as follows
+        true_bg_col = np.mean(np.mean(bg_orig, axis=0), axis=0)
         if nn < self.ncol:
+            fg_col = col2
+            diff = self.rgb_color_diff_in_gray(fg_col, true_bg_col)
+            while diff < self.gray_diff_threshold:
+                fg_col = np.random.choice(256, 3).astype('uint8')
+                # print("change color to: ", fg_col)
+                diff = self.rgb_color_diff_in_gray(fg_col, true_bg_col)
+            col2 = fg_col
             return (col2, col1)
         else:
             # need to swap to make the second color close to the input backgroun color
+            fg_col = col1
+            diff = self.rgb_color_diff_in_gray(fg_col, true_bg_col)
+            while diff < self.gray_diff_threshold:
+                fg_col = np.random.choice(256, 3).astype('uint8')
+                # print("change color to: ", fg_col)
+                diff = self.rgb_color_diff_in_gray(fg_col, true_bg_col)
+            col1 = fg_col
             return (col1, col2)
 
     def mean_color(self, arr):
@@ -321,7 +342,7 @@ class Colorize(object):
         bg_col = np.mean(np.mean(bg_arr,axis=0),axis=0)
         l_bg = Layer(alpha=255*np.ones_like(text_arr,'uint8'),color=bg_col)
 
-        l_text.alpha = l_text.alpha * np.clip(0.88 + 0.1*np.random.randn(), 0.72, 1.0)
+        # l_text.alpha = l_text.alpha * np.clip(0.94 + 0.1*np.random.randn(), 0.88, 1.0)
         layers = [l_text]
         blends = []
 
@@ -335,28 +356,28 @@ class Colorize(object):
             layers.append(l_border)
             blends.append('normal')
 
-        # add shadow:
-        if np.random.rand() < self.p_drop_shadow:
-            # shadow gaussian size:
-            if min_h <= 15 : bsz = 1
-            elif 15 < min_h < 30: bsz = 3
-            else: bsz = 5
+        # # add shadow:
+        # if np.random.rand() < self.p_drop_shadow:
+        #     # shadow gaussian size:
+        #     if min_h <= 15 : bsz = 1
+        #     elif 15 < min_h < 30: bsz = 3
+        #     else: bsz = 5
 
-            # shadow angle:
-            theta = np.pi/4 * np.random.choice([1,3,5,7]) + 0.5*np.random.randn()
+        #     # shadow angle:
+        #     theta = np.pi/4 * np.random.choice([1,3,5,7]) + 0.5*np.random.randn()
 
-            # shadow shift:
-            if min_h <= 15 : shift = 2
-            elif 15 < min_h < 30: shift = 7+np.random.randn()
-            else: shift = 15 + 3*np.random.randn()
+        #     # shadow shift:
+        #     if min_h <= 15 : shift = 2
+        #     elif 15 < min_h < 30: shift = 7+np.random.randn()
+        #     else: shift = 15 + 3*np.random.randn()
 
-            # opacity:
-            op = 0.50 + 0.1*np.random.randn()
+        #     # opacity:
+        #     op = 0.50 + 0.1*np.random.randn()
 
-            shadow = self.drop_shadow(l_text.alpha, theta, shift, 3*bsz, op)
-            l_shadow = Layer(shadow, 0)
-            layers.append(l_shadow)
-            blends.append('normal')
+        #     shadow = self.drop_shadow(l_text.alpha, theta, shift, 3*bsz, op)
+        #     l_shadow = Layer(shadow, 0)
+        #     layers.append(l_shadow)
+        #     blends.append('normal')
         
 
         l_bg = Layer(alpha=255*np.ones_like(text_arr,'uint8'), color=bg_col)
@@ -463,3 +484,4 @@ class Colorize(object):
             return bg_arr
 
         return bg_arr
+

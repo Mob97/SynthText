@@ -89,5 +89,10 @@ ENV/
 # Rope project settings
 .ropeproject
 
+#matlab libs
+prep_scripts/mcg/
+prep_scripts/libs/
+
 #h5 model
-.h5
+*.h5
+*.mat
