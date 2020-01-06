@@ -38,7 +38,7 @@ A dataset with approximately 800000 synthetic scene-text images generated with t
 ### Adding New Images
 Segmentation and depth-maps are required to use new images as background. Sample scripts for obtaining these are available [here](https://github.com/ankush-me/SynthText/tree/master/prep_scripts). (**Warning: Require MATLAB on Linux**)
 
-* Prepare `matconvnet` (Follow instructions: http://www.vlfeat.org/matconvnet/install/) and `vlfeat-0.9.18` for MATLAB.
+* Prepare `matconvnet` ([Follow instructions](http://www.vlfeat.org/matconvnet/install/)) and `vlfeat-0.9.18` for MATLAB.
 
 * `predict_depth.m` MATLAB script to regress a depth mask for a given RGB image; uses the network of [Liu etal.](https://bitbucket.org/fayao/dcnf-fcsp/). However, more recent works (e.g., [this](https://github.com/iro-cp/FCRN-DepthPrediction)) might give better results.
 * `run_ucm.m` and `floodFill.py` for getting segmentation masks using [gPb-UCM](https://github.com/jponttuset/mcg).
